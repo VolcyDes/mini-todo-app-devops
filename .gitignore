@@ -1,0 +1,13 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# Environnements virtuels
+.venv/
+venv/
+
+# Base de données locale
+backend/todo.db
+
+# macOS
+.DS_Store
