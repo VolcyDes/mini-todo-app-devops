@@ -1,19 +1,306 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Mini To-Do App</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root{
+      --bg: #0b1220;
+      --card: rgba(255,255,255,0.08);
+      --card2: rgba(255,255,255,0.06);
+      --text: #eaf0ff;
+      --muted: rgba(234,240,255,0.7);
+      --border: rgba(255,255,255,0.12);
+      --primary: #7c3aed;
+      --danger: #ef4444;
+      --shadow: 0 20px 60px rgba(0,0,0,0.35);
+      --radius: 18px;
+    }
+    *{ box-sizing: border-box; }
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      color: var(--text);
+      background:
+        radial-gradient(900px 500px at 15% 10%, rgba(124,58,237,0.35), transparent 55%),
+        radial-gradient(900px 500px at 85% 20%, rgba(34,197,94,0.25), transparent 55%),
+        radial-gradient(900px 500px at 60% 90%, rgba(59,130,246,0.22), transparent 55%),
+        var(--bg);
+      min-height: 100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: 28px 16px;
+    }
+    .container{
+      width: min(980px, 100%);
+      display:grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 18px;
+    }
+    @media (max-width: 900px){
+      .container{ grid-template-columns: 1fr; }
+    }
+    .card{
+      background: linear-gradient(180deg, var(--card), var(--card2));
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 18px;
+      backdrop-filter: blur(10px);
+    }
+    .header{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .title{
+      margin:0;
+      font-size: 28px;
+      letter-spacing: 0.2px;
+    }
+    .subtitle{
+      margin: 6px 0 0 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.4;
+    }
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.06);
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    .row{
+      display:flex;
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .input{
+      flex:1;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px 12px;
+      color: var(--text);
+      outline: none;
+      font-size: 14px;
+    }
+    .input::placeholder{ color: rgba(234,240,255,0.5); }
+    .btn{
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.08);
+      color: var(--text);
+      border-radius: 14px;
+      padding: 12px 14px;
+      cursor: pointer;
+      font-weight: 700;
+      transition: transform .05s ease, background .15s ease, border-color .15s ease;
+      user-select: none;
+    }
+    .btn:hover{ background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.18); }
+    .btn:active{ transform: translateY(1px); }
+    .btn.primary{
+      background: linear-gradient(135deg, rgba(124,58,237,0.9), rgba(59,130,246,0.75));
+      border-color: rgba(124,58,237,0.55);
+    }
+    .btn.primary:hover{ filter: brightness(1.05); }
+    .btn.danger{
+      background: rgba(239,68,68,0.14);
+      border-color: rgba(239,68,68,0.35);
+      color: rgba(255,210,210,0.98);
+    }
+    .btn.danger:hover{ background: rgba(239,68,68,0.22); }
+
+    .list{
+      margin-top: 14px;
+      display:flex;
+      flex-direction:column;
+      gap: 10px;
+      padding:0;
+      list-style:none;
+    }
+    .item{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      padding: 12px 12px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.06);
+      animation: pop .18s ease-out;
+    }
+    @keyframes pop{
+      from{ transform: translateY(6px); opacity: 0; }
+      to{ transform: translateY(0); opacity: 1; }
+    }
+    .item-left{
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      min-width: 0;
+    }
+    .dot{
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(34,197,94,0.9);
+      box-shadow: 0 0 0 4px rgba(34,197,94,0.18);
+      flex: 0 0 auto;
+    }
+    .task-text{
+      font-size: 14px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 520px;
+    }
+    @media (max-width: 900px){
+      .task-text{ max-width: 70vw; }
+    }
+
+    /* Dashboard */
+    .dash-title{ margin:0 0 8px 0; font-size: 16px; letter-spacing: .2px; }
+    .muted{ color: var(--muted); font-size: 13px; line-height: 1.5; }
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .metric{
+      border: 1px solid var(--border);
+      background: rgba(0,0,0,0.22);
+      border-radius: 16px;
+      padding: 12px;
+    }
+    .metric .k{ color: rgba(234,240,255,0.65); font-size: 12px; margin-bottom: 6px; }
+    .metric .v{ font-size: 16px; font-weight: 800; letter-spacing: .2px; }
+    .metric .sub{ margin-top: 4px; color: rgba(234,240,255,0.65); font-size: 12px; }
+
+    .status{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      margin-top: 12px;
+      padding: 12px;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      background: rgba(0,0,0,0.22);
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .status-left{ display:flex; align-items:center; gap: 8px; }
+    .badge{
+      width: 8px; height: 8px; border-radius: 999px;
+      background: rgba(34,197,94,0.95);
+      box-shadow: 0 0 0 4px rgba(34,197,94,0.2);
+    }
+    .status.off .badge{
+      background: rgba(239,68,68,0.95);
+      box-shadow: 0 0 0 4px rgba(239,68,68,0.2);
+    }
+
+    .mono{
+      margin-top: 10px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 12px;
+      padding: 10px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: rgba(0,0,0,0.25);
+      overflow:auto;
+      color: rgba(234,240,255,0.85);
+    }
+    .actions{
+      margin-top: 12px;
+      display:flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+  </style>
 </head>
 <body>
-  <h1>Mini To-Do App</h1>
+  <div class="container">
+    <section class="card">
+      <div class="header">
+        <div>
+          <h1 class="title">Mini To-Do</h1>
+          <p class="subtitle">Ajoute, affiche et supprime des tâches via l’API. Simple, propre, efficace.</p>
+        </div>
+        <div class="pill" id="counter">—</div>
+      </div>
 
-  <div>
-    <input id="task-input" type="text" placeholder="Nouvelle tâche..." />
-    <button id="add-btn">ADD</button>
+      <div class="row">
+        <input id="taskInput" class="input" placeholder="Nouvelle tâche… (Entrée pour ajouter)" />
+        <button id="addBtn" class="btn primary">Ajouter</button>
+        <button id="refreshBtn" class="btn">Rafraîchir</button>
+      </div>
+
+      <ul id="taskList" class="list"></ul>
+    </section>
+
+    <aside class="card">
+      <h2 class="dash-title">Dashboard</h2>
+      <p class="muted">Infos runtime utiles pour debug & démo DevOps (latence, statut, environnement).</p>
+
+      <div class="grid">
+        <div class="metric">
+          <div class="k">Compteur</div>
+          <div class="v" id="mCount">—</div>
+          <div class="sub">tâches</div>
+        </div>
+
+        <div class="metric">
+          <div class="k">Latence API</div>
+          <div class="v" id="mLatency">—</div>
+          <div class="sub">ms (GET /tasks)</div>
+        </div>
+
+        <div class="metric">
+          <div class="k">Environnement</div>
+          <div class="v" id="mEnv">—</div>
+          <div class="sub">détecté auto</div>
+        </div>
+
+        <div class="metric">
+          <div class="k">Dernier refresh</div>
+          <div class="v" id="mLast">—</div>
+          <div class="sub">heure locale</div>
+        </div>
+      </div>
+
+      <div class="status" id="apiStatus">
+        <div class="status-left">
+          <span class="badge"></span>
+          <span>Backend : <strong id="apiStatusText">—</strong></span>
+        </div>
+        <button id="openDocsBtn" class="btn">/docs</button>
+      </div>
+
+      <div class="mono" id="apiBase"></div>
+
+      <div class="actions">
+        <button id="resetBtn" class="btn danger">Reset (supprimer tout)</button>
+        <button id="switchBtn" class="btn">Changer API_BASE</button>
+      </div>
+
+      <p class="muted" style="margin-top:12px;">
+        Tip: si tu déploies sur Minikube, utilise l’URL de <code>minikube service todo-backend --url</code>.
+      </p>
+    </aside>
   </div>
-
-  <ul id="tasks-list"></ul>
 
   <script src="app.js"></script>
 </body>
