@@ -125,7 +125,12 @@ function render(tasks) {
       btn.disabled = true;
       try {
         await api(`/tasks/${id}`, { method: "DELETE" });
-        await load();
+
+	// 🔄 refresh immédiat
+	await load();
+
+	// 🔁 micro-refresh (au cas où le navigateur est en retard)
+	setTimeout(load, 50);
       } catch (e) {
         alert("Erreur suppression: " + e.message);
       } finally {
