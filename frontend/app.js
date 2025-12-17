@@ -63,17 +63,35 @@ function escapeHtml(str) {
 async function api(path, options = {}) {
   const url = `${API_BASE}${path}`;
   const res = await fetch(url, {
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...(options.headers || {}) },
     ...options,
   });
+
+  // Si erreur HTTP, essaye de lire un message (si possible)
   if (!res.ok) {
-    const txt = await res.text().catch(() => "");
-    throw new Error(`${res.status} ${res.statusText} ${txt}`.trim());
+    let msg = `${res.status} ${res.statusText}`;
+    try {
+      const txt = await res.text();
+      if (txt) msg = txt;
+    } catch {}
+    throw new Error(msg);
   }
-  const contentType = res.headers.get("content-type") || "";
-  if (contentType.includes("application/json")) return res.json();
-  return res.text();
+
+  // ✅ DELETE FastAPI renvoie souvent 204 No Content => pas de JSON à parser
+  if (res.status === 204) return null;
+
+  const ct = res.headers.get("content-type") || "";
+  // Si pas du JSON, retourne du texte
+  if (!ct.includes("application/json")) {
+    const txt = await res.text();
+    return txt || null;
+  }
+
+  // Si JSON vide, éviter crash
+  const txt = await res.text();
+  return txt ? JSON.parse(txt) : null;
 }
+
 
 function updateHeaderCount(n) {
   els.counter.textContent = n <= 1 ? `${n} tâche` : `${n} tâches`;
