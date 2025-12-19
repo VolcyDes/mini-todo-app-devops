@@ -1,0 +1,34 @@
+name: CD
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy-to-kubernetes:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up kind (Kubernetes in Docker)
+        uses: helm/kind-action@v1.9.0
+        with:
+          version: v0.23.0
+          kubectl_version: v1.30.0
+
+      - name: Apply Kubernetes manifests
+        run: |
+          echo "Applying Kubernetes manifests from k8s/..."
+          kubectl apply -f k8s/
+
+          echo "Waiting for deployments to be ready..."
+          kubectl rollout status deployment/postgres --timeout=120s || true
+          kubectl rollout status deployment/todo-backend --timeout=120s || true
+
+          echo "Current pods:"
+          kubectl get pods -o wide
+
+          echo "Current services:"
+          kubectl get svc -o wide
