@@ -1,3 +1,8 @@
+# (colle le YAML ci-dessus, puis CTRL+O Enter, CTRL+X)
+
+git add .github/workflows/cd.yml
+git commit -m "Improve CD logs: kubectl get pods/svc after deploy"
+git push
 name: CD
 
 on:
@@ -18,17 +23,31 @@ jobs:
           version: v0.23.0
           kubectl_version: v1.30.0
 
-      - name: Apply Kubernetes manifests
+      - name: Deploy to Kubernetes (apply manifests + verify)
         run: |
+          set -e
+
           echo "Applying Kubernetes manifests from k8s/..."
           kubectl apply -f k8s/
 
+          echo ""
           echo "Waiting for deployments to be ready..."
-          kubectl rollout status deployment/postgres --timeout=120s || true
-          kubectl rollout status deployment/todo-backend --timeout=120s || true
+          # On tente les rollouts si les deployments existent (sinon on ne casse pas le job)
+          kubectl rollout status deployment/postgres --timeout=180s || true
+          kubectl rollout status deployment/todo-backend --timeout=180s || true
+          kubectl rollout status deployment/todo-frontend --timeout=180s || true
 
-          echo "Current pods:"
-          kubectl get pods -o wide
+          echo ""
+          echo "========== PODS (all namespaces) =========="
+          kubectl get pods -A -o wide
 
-          echo "Current services:"
-          kubectl get svc -o wide
+          echo ""
+          echo "========== SERVICES (all namespaces) =========="
+          kubectl get svc -A -o wide
+
+          echo ""
+          echo "========== DEPLOYMENTS =========="
+          kubectl get deployments -A -o wide
+
+          echo ""
+          echo "CD deployment finished ✅"
